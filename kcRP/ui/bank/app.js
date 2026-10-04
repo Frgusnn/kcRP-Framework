@@ -5,6 +5,8 @@ KcdMp.onServer("bank.state", (value) => {
   updateDisplay();
 });
 
+/* ---------- État de l'application ---------- */
+
 const state = {
   cash: 0,
   bank: 0
@@ -29,13 +31,14 @@ const elements = {
 const DEFAULT_SUBTITLE = elements.subtitle ? elements.subtitle.textContent : "";
 let statusTimer = null;
 
-/* ---------- Affichage ---------- */
+/* ---------- Affichage & Formatage ---------- */
 
 function formatMoney(value) {
   return Number(value || 0).toLocaleString("fr-FR", {
-    minimumFractionDigits: 2,
+    minimumFractionDigits: 0,
     maximumFractionDigits: 2
   });
+  return `${formatted} <span class="symbol-groschen" aria-label="Groschen">g.₰</span>`;
 }
 
 function setAll(nodes, text) {
@@ -45,9 +48,9 @@ function setAll(nodes, text) {
 }
 
 function updateDisplay() {
-  setAll(elements.cash, formatMoney(state.cash));
-  setAll(elements.bank, formatMoney(state.bank));
-  setAll(elements.total, formatMoney(state.cash + state.bank));
+  setAll(elements.cash, formatMoney(state.cash) + " .G");
+  setAll(elements.bank, formatMoney(state.bank) + " .G");
+  setAll(elements.total, formatMoney(state.cash + state.bank) + " .G");
 }
 
 function setStatus(text) {
@@ -59,16 +62,20 @@ function setStatus(text) {
   }, 3000);
 }
 
-/* ---------- Clavier dans les champs ---------- */
+/* ---------- Gestion du Focus / Clavier ---------- */
 
 function takeKeyboard() {
-  KcdMp.focus({ cursor: true, keyboard: true })
-    .catch((e) => console.error("focus clavier refusé :", e));
+  if (window.KcdMp && typeof KcdMp.focus === "function") {
+    KcdMp.focus({ cursor: true, keyboard: true })
+      .catch((e) => console.error("focus clavier refusé :", e));
+  }
 }
 
 function releaseKeyboard() {
-  KcdMp.focus({ cursor: true, keyboard: false })
-    .catch((e) => console.error("focus clavier :", e));
+  if (window.KcdMp && typeof KcdMp.focus === "function") {
+    KcdMp.focus({ cursor: true, keyboard: false })
+      .catch((e) => console.error("focus clavier refusé :", e));
+  }
 }
 
 [elements.depositAmount, elements.withdrawAmount].forEach((input) => {
@@ -80,13 +87,15 @@ function releaseKeyboard() {
 /* ---------- Actions ---------- */
 
 function requestClose() {
-  try {
-    const result = KcdMp.emitServer("bank.close", {});
-    if (result && typeof result.catch === "function") {
-      result.catch((e) => console.error("bank.close refusé :", e));
+  if (window.KcdMp && typeof KcdMp.emitServer === "function") {
+    try {
+      const result = KcdMp.emitServer("bank.close", {});
+      if (result && typeof result.catch === "function") {
+        result.catch((e) => console.error("bank.close refusé :", e));
+      }
+    } catch (e) {
+      console.error("bank.close erreur :", e);
     }
-  } catch (e) {
-    console.error("bank.close erreur :", e);
   }
 }
 
@@ -102,14 +111,18 @@ function readAmount(input) {
 function deposit() {
   const amount = readAmount(elements.depositAmount);
   if (amount === null) return;
-  KcdMp.emitServer("bank.deposit", { amount });
+  if (window.KcdMp) {
+    KcdMp.emitServer("bank.deposit", { amount });
+  }
   elements.depositAmount.value = "";
 }
 
 function withdraw() {
   const amount = readAmount(elements.withdrawAmount);
   if (amount === null) return;
-  KcdMp.emitServer("bank.withdraw", { amount });
+  if (window.KcdMp) {
+    KcdMp.emitServer("bank.withdraw", { amount });
+  }
   elements.withdrawAmount.value = "";
 }
 
@@ -122,7 +135,7 @@ function switchTab(tabName) {
   });
 }
 
-/* ---------- Données du serveur ---------- */
+/* ---------- Synchronisation Serveur ---------- */
 
 function applyState(data) {
   if (!data || typeof data !== "object") return;
@@ -132,7 +145,6 @@ function applyState(data) {
 }
 
 if (window.KcdMp) {
-  console.log("KCD:MP SDK detected");
   KcdMp.onServer("bank.state", applyState);
   KcdMp.onServer("bank_state", applyState);
 }
@@ -165,4 +177,3 @@ document.addEventListener("keydown", (event) => {
 });
 
 updateDisplay();
-console.log("Bank UI initialized");

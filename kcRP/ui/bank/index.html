@@ -7,82 +7,116 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <main class="bank">
 
-    <header class="bank__header">
-      <div class="brand">
-        <div class="seal">⚜</div>
-        <div>
-          <p class="eyebrow">Kingdom Come RP</p>
-          <h1>Maison du Prêteur</h1>
-          <p class="subtitle">Or et créances, en toute discrétion</p>
-        </div>
-      </div>
+  <!-- Conteneur global de centrage -->
+  <div class="bank-container">
 
-      <button class="close-button" id="closeButton" type="button" aria-label="Fermer">×</button>
-    </header>
+    <main class="bank">
 
-    <section class="bank__body">
-
-      <nav class="sidebar">
-        <button class="tab active" data-tab="deposit" type="button"><span>⇩</span> Dépôt</button>
-        <button class="tab" data-tab="withdraw" type="button"><span>⇧</span> Retrait</button>
-      </nav>
-
-      <section class="main-panel">
-
-        <div class="tab-content" id="tab-deposit">
-          <div class="operation-card">
-            <h2>Confier de l'or</h2>
-            <p class="operation-desc">Remettez vos groschen au prêteur pour qu'il les garde en lieu sûr.</p>
-            <div class="input-group">
-              <label for="depositAmount">Montant (Groschen)</label>
-              <input id="depositAmount" type="number" min="1" placeholder="Ex. 100">
-            </div>
-            <button class="action-button primary" id="depositButton" type="button">Déposer</button>
+      <header class="bank__header">
+        <div class="brand">
+          <div>
+            <p class="eyebrow">De Kuttenberg · Maison du Prêteur</p>
+            <h1>Maison du Prêteur</h1>
+            <p class="subtitle">Registre des fonds et des créances</p>
           </div>
         </div>
 
-        <div class="tab-content hidden" id="tab-withdraw">
-          <div class="operation-card">
-            <h2>Reprendre son or</h2>
-            <p class="operation-desc">Récupérez vos groschen en espèces.</p>
-            <div class="input-group">
-              <label for="withdrawAmount">Montant (Groschen)</label>
-              <input id="withdrawAmount" type="number" min="1" placeholder="Ex. 100">
+        <button class="close-button" id="closeButton" type="button" aria-label="Fermer">×</button>
+      </header>
+
+      <section class="bank__body">
+
+        <nav class="sidebar">
+          <button class="tab active" data-tab="deposit" type="button">Dépôt</button>
+          <button class="tab" data-tab="withdraw" type="button">Retrait</button>
+        </nav>
+
+        <section class="main-panel">
+
+          <div class="tab-content" id="tab-deposit">
+            <div class="grid-three-columns">
+              <article class="info-card">
+                <h3>Confier</h3>
+                <p>Vos groschen sont inscrits au registre du prêteur.</p>
+              </article>
+              <article class="info-card">
+                <h3>Conserver</h3>
+                <p>Les fonds restent sous la garde de la maison.</p>
+              </article>
+              <article class="info-card">
+                <h3>Reprendre</h3>
+                <p>Le reçu permet de réclamer les fonds déposés.</p>
+              </article>
             </div>
-            <button class="action-button secondary" id="withdrawButton" type="button">Retirer</button>
+
+            <div class="operation-card">
+              <h2>Confier de l'or</h2>
+              <div class="input-group">
+                <label for="depositAmount">Montant (Groschen)</label>
+                <input id="depositAmount" type="number" min="1" placeholder="Ex. 100">
+              </div>
+              <button class="action-button primary" id="depositButton" type="button">Déposer</button>
+            </div>
           </div>
-        </div>
+
+          <div class="tab-content hidden" id="tab-withdraw">
+            <div class="grid-three-columns">
+              <article class="info-card">
+                <h3>Réclamer</h3>
+                <p>Indiquez le montant inscrit dans votre registre.</p>
+              </article>
+              <article class="info-card">
+                <h3>Sans frais</h3>
+                <p>Aucun prélèvement sur les retraits courants.</p>
+              </article>
+              <article class="info-card">
+                <h3>Comptoir</h3>
+                <p>Le paiement est effectué en groschen usités.</p>
+              </article>
+            </div>
+
+            <div class="operation-card">
+              <h2>Reprendre son or</h2>
+              <div class="input-group">
+                <label for="withdrawAmount">Montant (Groschen)</label>
+                <input id="withdrawAmount" type="number" min="1" placeholder="Ex. 100">
+              </div>
+              <button class="action-button secondary" id="withdrawButton" type="button">Retirer</button>
+            </div>
+          </div>
+
+        </section>
+
+        <aside class="detail">
+          <h3 class="panel-title">Votre compte</h3>
+          <div class="summary-card">
+            <div class="summary-row">
+              <span>Votre Bourse</span>
+              <strong id="cashSummary">0.00 G</strong>
+            </div>
+            <div class="summary-row">
+              <span>Au coffre</span>
+              <strong id="bankSummary">0,00 G</strong>
+            </div>
+          </div>
+
+          <div class="summary-total">
+            <span>Total</span>
+            <strong id="totalBalance">0,00 G</strong>
+          </div>
+        </aside>
 
       </section>
 
-      <aside class="detail">
-        <h3 class="panel-title">Votre compte</h3>
-        <div class="summary-card">
-          <div class="summary-row">
-            <span>Espèces</span>
-            <strong id="cashSummary">0</strong>
-          </div>
-          <div class="summary-row">
-            <span>Au coffre</span>
-            <strong id="bankSummary">0</strong>
-          </div>
-        </div>
+      <footer class="bank__footer">
+        <span>Maison du Prêteur</span>
+        <span>De Kuttenberg</span>
+      </footer>
 
-        <div class="summary-total">
-          <span>Total</span>
-          <strong id="totalBalance">0</strong>
-        </div>
-      </aside>
+    </main>
 
-    </section>
-
-    <footer class="bank__footer">
-      <span>Maison du Prêteur</span>
-      <span>Appuyez sur Échap pour fermer</span>
-    </footer>
-  </main>
+  </div>
 
   <script src="/sdk.js"></script>
   <script src="app.js"></script>
