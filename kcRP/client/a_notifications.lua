@@ -37,6 +37,11 @@ function OnServerEvent(name, payload)
     end
     return
   end
+
+  if name == "bank_state" then
+    print("=== bank_state REÇU ===", payload)
+    return
+  end
   
   if previousServerEvent then
     return previousServerEvent(name, payload)

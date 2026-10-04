@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bank - kcRP</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="bank">
+    <header class="bank__header">
+      <section>
+        <p class="eyebrow">Royaume de Bohême · 1403</p>
+        <h1>Gestion de compte</h1>
+        <p class="subtitle">Dépôts, retraits.</p>
+      </section>
+
+      <section class="seal" aria-label="Sceau de la Banque">
+        <span>🏦</span>
+      </section>
+
+      <button
+        id="close-button"
+        class="close-button"
+        type="button"
+        aria-label="Fermer la banque"
+        title="Fermer la banque"
+      >
+        ×
+      </button>
+    </header>
+
+    <section class="bank__body">
+      <aside class="sidebar">
+        <p class="section-label">Votre compte</p>
+
+        <div class="account-card">
+          <div class="account-row">
+            <span class="account-label">Bourse</span>
+            <strong id="player-cash" class="account-value">—</strong>
+          </div>
+          <div class="account-row">
+            <span class="account-label">Banque</span>
+            <strong id="player-bank" class="account-value">—</strong>
+          </div>
+          <div class="account-divider"></div>
+          <div class="account-row">
+            <span class="account-label">Total</span>
+            <strong id="player-total" class="account-value total">—</strong>
+          </div>
+        </div>
+
+        <div class="sidebar__rule"></div>
+
+        <p class="section-label">Actions rapides</p>
+        
+        <button class="quick-action" data-action="deposit">
+          <span>↓</span> Déposer
+        </button>
+        
+        <button class="quick-action" data-action="withdraw">
+          <span>↑</span> Retirer
+        </button>
+        
+        <button class="quick-action" data-action="transfer">
+          <span>↔</span> Virement
+        </button>
+      </aside>
+
+      <section class="main-panel">
+        <div class="panel-tabs">
+          <button class="tab active" data-tab="operations">Opérations</button>
+          <button class="tab" data-tab="history">Historique</button>
+        </div>
+
+        <div class="tab-content" id="tab-operations">
+          <div class="operation-card">
+            <h2>Déposer de l'argent</h2>
+            <p class="operation-desc">Transférez de l'argent de votre bourse vers votre compte en banque.</p>
+            
+            <div class="input-group">
+              <label for="deposit-amount">Montant (Groschen)</label>
+              <input
+                id="deposit-amount"
+                type="number"
+                placeholder="Ex: 500"
+                min="1"
+                autocomplete="off"
+              >
+            </div>
+
+            <button id="deposit-button" class="action-button primary">
+              Déposer
+            </button>
+          </div>
+
+          <div class="operation-card">
+            <h2>Retirer de l'argent</h2>
+            <p class="operation-desc">Retirez de l'argent de votre compte en banque vers votre bourse.</p>
+            
+            <div class="input-group">
+              <label for="withdraw-amount">Montant (Groschen)</label>
+              <input
+                id="withdraw-amount"
+                type="number"
+                placeholder="Ex: 200"
+                min="1"
+                autocomplete="off"
+              >
+            </div>
+
+            <button id="withdraw-button" class="action-button secondary">
+              Retirer
+            </button>
+          </div>
+        </div>
+
+        <div class="tab-content hidden" id="tab-history">
+          <div class="empty-state">
+            <span>📜</span>
+            <p>L'historique des transactions sera disponible prochainement.</p>
+          </div>
+        </div>
+      </section>
+
+      <aside class="detail">
+        <p class="section-label">Informations</p>
+
+        <div class="info-card">
+          <h3>Limites</h3>
+          <ul class="info-list">
+            <li>Dépôt minimum : <strong>1 G</strong></li>
+            <li>Retrait minimum : <strong>1 G</strong></li>
+            <li>Virement maximum : <strong>1 000 000 G</strong></li>
+          </ul>
+        </div>
+
+        <div class="info-card">
+          <h3>Fonctionnement</h3>
+          <p class="info-text">
+            Votre compte en banque est sécurisé et persistant. L'argent déposé est accessible depuis n'importe quelle banque du royaume.
+          </p>
+        </div>
+
+        <div class="info-card">
+          <h3>Commandes</h3>
+          <ul class="command-list">
+            <li><code>/bank</code> - Voir soldes</li>
+            <li><code>/deposit &lt;montant&gt;</code> - Déposer</li>
+            <li><code>/withdraw &lt;montant&gt;</code> - Retirer</li>
+            <li><code>/pay &lt;joueur&gt; &lt;montant&gt;</code> - Virement</li>
+          </ul>
+        </div>
+      </aside>
+    </section>
+
+    <footer class="bank__footer">
+      <span>Échap — Fermer la banque</span>
+      <span>Banque de Kuttenberg · kcRP Framework</span>
+    </footer>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

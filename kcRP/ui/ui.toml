@@ -4,3 +4,8 @@ api = 1
 page = "forge-register/index.html"
 z = 200
 focus = "input"
+
+[frames.bank]
+page = "bank/index.html"
+z = 200
+focus = "input"

@@ -384,14 +384,6 @@ end
 -- initialisation des modules jobs et banque, sauvegarde périodique.
 function OnGameModeInit()
   Log(fmt("kcRP on %s: spawn %.1f %.1f %.1f, %d slots", GetLevel(), spawnX, spawnY, spawnZ, GetMaxPlayers()))
-  --Charger les scripts client
-  AddClientScript("kcRP/client/notifications.lua")
-  AddClientScript("kcRP/client/account.lua")
-  AddClientScript("kcRP/client/creator.lua")
-  AddClientScript("kcRP/client/cartmaker.lua")
-  AddClientScript("kcRP/client/forge-register.lua")
-  AddClientScript("kcRP/client/z20_hud.lua")
-  AddClientScript("kcRP/client/z40_forge_unlock.lua")
 
   SetStoryQuests(false) -- les quêtes du jeu restent endormies (elles peuvent prendre les affaires d'un joueur)
   SetXPRate(PROGRESS.xp_rate)
@@ -1260,6 +1252,20 @@ function OnPlayerCommandText(pid, cmd, args)
     end
 
     SetPlayerCursor(pid, true)
+
+    return true
+  end
+
+  if cmd == "bank" then
+    local opened = ShowPlayerWebFrame(pid, "bank")
+    if not opened then
+      kcRP.Functions.Notify(pid, "Impossible d'ouvrir la banque.", "error", 4000)
+      return true
+    end
+
+    SetPlayerCursor(pid, true)
+
+    kcRP.Functions.Notify(pid, "Verifions le contenue de votre coffre.", "info", 2000)
 
     return true
   end

@@ -617,4 +617,86 @@ end
 
 kcRP.Bank = Bank
 
+-- =====================================================================
+-- Interface Web de la Banque
+-- =====================================================================
+
+-- Envoyer les soldes au client
+local function sendBankState(pid)
+  local player = getPlayer(pid)
+  
+  if not player then
+    return
+  end
+  
+  local cash = kcRP.Functions.GetMoney(pid, "cash") or 0
+  local bank = kcRP.Functions.GetMoney(pid, "bank") or 0
+  
+  -- Envoyer via un événement client
+  SendClientEvent(pid, "bank_state", string.format("%.2f;%.2f", cash, bank))
+end
+
+-- Gérer les événements web
+local previousWebMessage = OnWebMessage
+
+-- Gérer les événements web
+local previousWebMessage = OnWebMessage
+
+-- Gérer les événements web
+local previousWebMessage = OnWebMessage
+
+function OnWebMessage(frame, data)
+  -- Vérifier si c'est la frame bank
+  if frame ~= "bank" then
+    if previousWebMessage then
+      return previousWebMessage(frame, data)
+    end
+    return
+  end
+  
+  -- Récupérer le joueur qui a envoyé le message
+  local pid = GetPlayerFromWebFrame(frame)
+  
+  if not pid then
+    Log("Bank: Impossible de trouver le joueur pour la frame", frame)
+    return
+  end
+  
+  Log("Bank Web message from player", pid, ":", data)
+  
+  if data and data.action then
+    if data.action == "close" then
+      -- Fermer la frame et cacher le curseur
+      HidePlayerWebFrame(pid, "bank")
+      SetPlayerCursor(pid, false)
+      Log("Bank frame closed for player", pid)
+      
+    elseif data.action == "deposit" then
+      -- Dépôt
+      local amount = tonumber(data.amount)
+      if amount and amount > 0 then
+        Log("Deposit requested by player", pid, ":", amount)
+        -- Traiter le dépôt
+      end
+      
+    elseif data.action == "withdraw" then
+      -- Retrait
+      local amount = tonumber(data.amount)
+      if amount and amount > 0 then
+        Log("Withdrawal requested by player", pid, ":", amount)
+        -- Traiter le retrait
+      end
+    end
+  end
+  
+  if previousWebMessage then
+    return previousWebMessage(frame, data)
+  end
+end
+
+-- Commande de test pour mettre à jour l'UI
+function kcRP.Functions.UpdateBankUI(pid)
+  sendBankState(pid)
+end
+
 Log("kcRP: server bank module loaded")
