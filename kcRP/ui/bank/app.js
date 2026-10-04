@@ -36,16 +36,21 @@ function updateDisplay() {
 }
 
 function requestClose() {
-  console.log("=== Fermeture de la banque demandée ===");
-  
-  // Rendre le focus au jeu
-  if (window.KcdMp && window.KcdMp.blur) {
-    KcdMp.blur();
-  }
-  
-  // Envoyer l'événement au serveur
-  if (window.KcdMp) {
-    KcdMp.emitServer("bank_close", { action: "close" });
+  const sub = document.querySelector(".subtitle");
+  sub.textContent = "Clic reçu, envoi de bank.close...";
+
+  try {
+    const result = KcdMp.emitServer("bank.close", {});
+
+    if (result && typeof result.then === "function") {
+      result
+        .then(() => { sub.textContent = "bank.close envoyé au serveur."; })
+        .catch((e) => { sub.textContent = "REFUSÉ : " + e; });
+    } else {
+      sub.textContent = "bank.close envoyé (sans réponse).";
+    }
+  } catch (e) {
+    sub.textContent = "ERREUR : " + e;
   }
 }
 
@@ -65,7 +70,7 @@ function deposit() {
   console.log("Dépôt demandé:", amount);
   
   if (window.KcdMp) {
-    KcdMp.emitServer("bank_deposit", { amount: amount });
+    KcdMp.emitServer("bank.deposit", { amount: amount });
   }
   
   elements.depositAmount.value = "";
@@ -87,7 +92,7 @@ function withdraw() {
   console.log("Retrait demandé:", amount);
   
   if (window.KcdMp) {
-    KcdMp.emitServer("bank_withdraw", { amount: amount });
+    KcdMp.emitServer("bank.withdraw", { amount: amount });
   }
   
   elements.withdrawAmount.value = "";
@@ -139,7 +144,6 @@ elements.tabs.forEach(tab => {
 // Gestion des touches
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") {
-    event.preventDefault();
     requestClose();
   }
   
