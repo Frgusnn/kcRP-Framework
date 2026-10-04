@@ -621,26 +621,28 @@ kcRP.Bank = Bank
 -- Interface Web de la Banque
 -- =====================================================================
 
+-- Table pour suivre les joueurs avec la banque ouverte
+kcRP.bankFrames = kcRP.bankFrames or {}
+
 -- Envoyer les soldes au client
-local function sendBankState(pid)
+function kcRP.Functions.OpenBankUI(pid)
   local player = getPlayer(pid)
   
   if not player then
-    return
+    return false
   end
   
   local cash = kcRP.Functions.GetMoney(pid, "cash") or 0
   local bank = kcRP.Functions.GetMoney(pid, "bank") or 0
   
-  -- Envoyer via un événement client
-  SendClientEvent(pid, "bank_state", string.format("%.2f;%.2f", cash, bank))
+  -- Envoyer via un événement client (JSON)
+  SendClientEvent(pid, "bank_state", {
+    cash = cash,
+    bank = bank
+  })
+  
+  return true
 end
-
--- Gérer les événements web
-local previousWebMessage = OnWebMessage
-
--- Gérer les événements web
-local previousWebMessage = OnWebMessage
 
 -- Gérer les événements web
 local previousWebMessage = OnWebMessage
@@ -654,37 +656,47 @@ function OnWebMessage(frame, data)
     return
   end
   
-  -- Récupérer le joueur qui a envoyé le message
-  local pid = GetPlayerFromWebFrame(frame)
+  Log("=== Bank Web message received ===", data)
+  
+  -- Trouver le joueur qui a cette frame ouverte
+  local pid = nil
+  if kcRP.bankFrames then
+    for playerPid, _ in pairs(kcRP.bankFrames) do
+      if IsPlayerConnected(playerPid) then
+        pid = playerPid
+        break
+      end
+    end
+  end
   
   if not pid then
     Log("Bank: Impossible de trouver le joueur pour la frame", frame)
     return
   end
   
-  Log("Bank Web message from player", pid, ":", data)
+  Log("Bank message from player", pid, ":", data)
   
-  if data and data.action then
+  -- Vérifier si data est une table (JSON décodé)
+  if type(data) == "table" then
     if data.action == "close" then
+      Log("=== CLOSE ACTION DETECTED ===")
       -- Fermer la frame et cacher le curseur
       HidePlayerWebFrame(pid, "bank")
       SetPlayerCursor(pid, false)
+      kcRP.bankFrames[pid] = nil
       Log("Bank frame closed for player", pid)
+      return
       
     elseif data.action == "deposit" then
-      -- Dépôt
       local amount = tonumber(data.amount)
       if amount and amount > 0 then
         Log("Deposit requested by player", pid, ":", amount)
-        -- Traiter le dépôt
       end
       
     elseif data.action == "withdraw" then
-      -- Retrait
       local amount = tonumber(data.amount)
       if amount and amount > 0 then
         Log("Withdrawal requested by player", pid, ":", amount)
-        -- Traiter le retrait
       end
     end
   end
@@ -694,6 +706,7 @@ function OnWebMessage(frame, data)
   end
 end
 
+Log("kcRP: server bank module loaded")
 -- Commande de test pour mettre à jour l'UI
 function kcRP.Functions.UpdateBankUI(pid)
   sendBankState(pid)

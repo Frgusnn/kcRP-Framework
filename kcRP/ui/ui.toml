@@ -3,9 +3,11 @@ api = 1
 [frames.forge-register]
 page = "forge-register/index.html"
 z = 200
-focus = "input"
+focus = "open"
+events_out = ["forge_close"]
 
 [frames.bank]
 page = "bank/index.html"
 z = 200
-focus = "input"
+focus = "open"
+events_out = ["bank_close", "bank_deposit", "bank_withdraw"]

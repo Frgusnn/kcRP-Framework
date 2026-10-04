@@ -1200,34 +1200,70 @@ local DOWN_BLOCKED = {
 }
 
 
+-- =====================================================================
+-- Gestion des messages web (forge-register + bank)
+-- =====================================================================
+
+function OnWebMessage(frame, data)
+  -- Gérer forge-register
+  if frame == "forge-register" then
+    Log("Forge-register message received:", data)
+    
+    if type(data) == "table" and data.action == "close" then
+      -- Trouver le joueur (via une table)
+      if kcRP.forgeFrames then
+        for pid, _ in pairs(kcRP.forgeFrames) do
+          if IsPlayerConnected(pid) then
+            SetPlayerWebFocus(pid, frame, false)
+            HidePlayerWebFrame(pid, frame)
+            kcRP.forgeFrames[pid] = nil
+            Log("Forge frame closed for player", pid)
+            break
+          end
+        end
+      end
+    end
+    return
+  end
+  
+  -- Gérer bank
+  if frame == "bank" then
+    Log("Bank message received:", data)
+    
+    if type(data) == "table" and data.action == "close" then
+      -- Trouver le joueur (via une table)
+      if kcRP.bankFrames then
+        for pid, _ in pairs(kcRP.bankFrames) do
+          if IsPlayerConnected(pid) then
+            SetPlayerWebFocus(pid, frame, false)
+            HidePlayerWebFrame(pid, frame)
+            kcRP.bankFrames[pid] = nil
+            Log("Bank frame closed for player", pid)
+            break
+          end
+        end
+      end
+    end
+    return
+  end
+end
+
+-- =====================================================================
+-- Les callbacks du jeu
+-- =====================================================================
+
 -- ---------------------------------------------------------------------
+-- OnPlayerConnect, OnPlayerDisconnect, etc.
+-- ---------------------------------------------------------------------
+
+-- =====================================================================
 -- Les commandes
--- Retourne true si la commande est traitée ; false laisse le serveur
--- chercher parmi ses propres commandes.
--- ---------------------------------------------------------------------
-
-function OnPlayerWebReady(pid, frame)
-  if frame ~= "forge-register" then
-    return
-  end
-
-  SetPlayerWebFocus(pid, frame, true)
-end
-
-function OnPlayerWebEvent(pid, frame, data)
-  if frame ~= "forge-register" then
-    return
-  end
-
-  if type(data) == "table" and data.action == "close" then
-    SetPlayerWebFocus(pid, frame, false)
-    HidePlayerWebFrame(pid, frame)
-  end
-end
+-- =====================================================================
 
 function OnPlayerCommandText(pid, cmd, args)
   cmd = cmd:lower()
   args = args or ""
+
 
   -- /job : affiche le HUD du métier.
   if cmd == "job" then
@@ -1235,12 +1271,21 @@ function OnPlayerCommandText(pid, cmd, args)
     return true
   end
 
+
   if cmd == "kcrp" then
     return kcRP.Functions.Command(pid, args)
   end
 
+
   if cmd == "forgeregister" then
+    -- Vérifier si déjà ouvert
+    if kcRP.forgeFrames and kcRP.forgeFrames[pid] then
+      SendClientMessage(pid, COLOR_RED, "Le registre est déjà ouvert.")
+      return true
+    end
+    
     local opened = ShowPlayerWebFrame(pid, "forge-register")
+
 
     if not opened then 
       SendClientMessage(
@@ -1251,36 +1296,63 @@ function OnPlayerCommandText(pid, cmd, args)
       return true
     end
 
+
     SetPlayerCursor(pid, true)
+    
+    -- Stocker le pid
+    kcRP.forgeFrames = kcRP.forgeFrames or {}
+    kcRP.forgeFrames[pid] = true
+
 
     return true
   end
 
+
   if cmd == "bank" then
+    -- Vérifier si la frame est déjà ouverte
+    if kcRP.bankFrames and kcRP.bankFrames[pid] then
+      kcRP.Functions.Notify(pid, "La banque est déjà ouverte.", "warning", 3000)
+      return true
+    end
+    
     local opened = ShowPlayerWebFrame(pid, "bank")
+
+
     if not opened then
-      kcRP.Functions.Notify(pid, "Impossible d'ouvrir la banque.", "error", 4000)
+      kcRP.Functions.Notify(pid, "Impossible d'ouvrir l'interface de la banque.", "error", 4000)
       return true
     end
 
+
     SetPlayerCursor(pid, true)
 
-    kcRP.Functions.Notify(pid, "Verifions le contenue de votre coffre.", "info", 2000)
+
+    -- Stocker le pid dans la table bankFrames
+    kcRP.bankFrames = kcRP.bankFrames or {}
+    kcRP.bankFrames[pid] = true
+
+
+    kcRP.Functions.Notify(pid, "Vérifions le contenu de votre coffre.", "info", 2000)
+
 
     return true
   end
+
 
   if kcRP.Jobs and kcRP.Jobs.HandleCommand(pid, cmd, args) then
     return true
   end
 
+
   if kcRP.Bank and kcRP.Bank.HandleCommand(pid, cmd, args) then
     return true
   end
 
+
   if kcRP.ForgeShop and kcRP.ForgeShop.HandleCommand(pid, cmd, args) then
     return true
   end
+
 
   if (IsPlayerKnockedOut(pid) or IsPlayerCarried(pid))
     and (DOWN_BLOCKED[cmd] or (not DOWN_OK[cmd] and not IsPlayerAdmin(pid))) then
@@ -1288,13 +1360,16 @@ function OnPlayerCommandText(pid, cmd, args)
     return true
   end
 
+
   if cmd == "register" then
     return register(pid, args)
   end
 
+
   if cmd == "login" then
     return login(pid, args)
   end
+
 
   -- /me <action> : "* Nom <action>" en lavande, à proximité.
   if cmd == "me" then
@@ -1302,9 +1377,11 @@ function OnPlayerCommandText(pid, cmd, args)
       return usage(pid, "/me <action>")
     end
 
+
     sayNearby(pid, CHAT_RANGE, COLOR_PURPLE, fmt("* %s %s", GetPlayerName(pid), args))
     return true
   end
+
 
   -- /do <description> : "<description> ((Nom))".
   if cmd == "do" then
@@ -1312,9 +1389,11 @@ function OnPlayerCommandText(pid, cmd, args)
       return usage(pid, "/do <description>")
     end
 
+
     sayNearby(pid, CHAT_RANGE, COLOR_PURPLE, fmt("%s ((%s))", args, GetPlayerName(pid)))
     return true
   end
+
 
   -- /ame <action> : "* Nom <action>" au-dessus de la tête seulement.
   if cmd == "ame" then
@@ -1322,11 +1401,13 @@ function OnPlayerCommandText(pid, cmd, args)
       return usage(pid, "/ame <action>")
     end
 
+
     local line = fmt("* %s %s", GetPlayerName(pid), args)
     SetPlayerChatBubble(pid, line, COLOR_PURPLE, CHAT_RANGE)
-    SendClientMessage(pid, COLOR_PURPLE, line) -- l'orateur ne voit pas sa propre tête : la ligne dans son chat
+    SendClientMessage(pid, COLOR_PURPLE, line)
     return true
   end
+
 
   -- /s <texte> : cri entendu à 40 m.
   if cmd == "s" or cmd == "shout" then
@@ -1334,10 +1415,12 @@ function OnPlayerCommandText(pid, cmd, args)
       return usage(pid, "/s <text>")
     end
 
+
     sayNearby(pid, SHOUT_RANGE, COLOR_WHITE, fmt("%s shouts: %s!", GetPlayerName(pid), args))
     SetPlayerChatBubble(pid, args .. "!", COLOR_WHITE, SHOUT_RANGE)
     return true
   end
+
 
   -- /b <texte> : ligne hors personnage, à proximité, en gris.
   if cmd == "b" or cmd == "ooc" then
@@ -1345,68 +1428,83 @@ function OnPlayerCommandText(pid, cmd, args)
       return usage(pid, "/b <text>")
     end
 
+
     sayNearby(pid, CHAT_RANGE, COLOR_OOC, fmt("(( %s: %s ))", GetPlayerName(pid), args))
     return true
   end
 
-  if cmd == "horse" then            -- pour tous (pas la commande native réservée aux admins)
+
+  if cmd == "horse" then
     return horse(pid)
   end
 
-  if cmd == "unstuck" then          -- coincé quelque part : retour au spawn
+
+  if cmd == "unstuck" then
     return unstuck(pid)
   end
 
-  if cmd == "seat" then             -- /seat 4 : autre place dans votre charrette (/seat seul : qui est où)
+
+  if cmd == "seat" then
     return seat(pid, args)
   end
 
-  if cmd == "createcart" then       -- fenêtre de fabrication d'une charrette
+
+  if cmd == "createcart" then
     return cartMaker(pid)
   end
 
-  if cmd == "despawncart" then      -- retire votre charrette, où qu'elle soit
+
+  if cmd == "despawncart" then
     return despawnCart(pid)
   end
 
-  if cmd == "anim" then             -- /anim wave : le geste pour tous, comme la roue de la touche G
+
+  if cmd == "anim" then
     return anim(pid, args)
   end
 
-  if cmd == "look" then             -- le créateur d'apparence : visage, cheveux, barbe, peau
+
+  if cmd == "look" then
     openCreator(pid, false)
     return true
   end
 
-  if cmd == "dice" then             -- /dice Hans 20 : une partie de dés à une table, mises sur le serveur
+
+  if cmd == "dice" then
     return dice(pid, args)
   end
+
 
   if cmd == "carry" or cmd == "putdown" or cmd == "carrying" or cmd == "ko" or cmd == "wake" then
     return carryCommand(pid, cmd, args)
   end
 
-  if cmd == "pickpocket" then       -- /pickpocket on|off|status (admin) ; on vole avec le prompt du jeu
+
+  if cmd == "pickpocket" then
     return pocketCommand(pid, args)
   end
 
-  if progressCommand(pid, cmd, args) then   -- /skills, et /setlevel /givexp /perk /perkpoints /xprate (admin)
+
+  if progressCommand(pid, cmd, args) then
     return true
   end
 
-  if cmd == "horsestat" then        -- /horsestat courage 12 : statistique du cheval de l'admin
+
+  if cmd == "horsestat" then
     return horseStat(pid, args)
   end
 
-  if cmd == "horsecoat" then        -- /horsecoat chestnut : robe du cheval de l'admin
+
+  if cmd == "horsecoat" then
     return horseCoat(pid, args)
   end
 
+
   if cmd == "help" then
     help(pid)
-    return true                     -- la liste du mode seulement : les commandes natives sont des outils d'admin
+    return true
   end
-    
+  
   -- =====================================================================
   -- Commande de test pour les notifications (admin)
   -- =====================================================================
@@ -1432,7 +1530,6 @@ function OnPlayerCommandText(pid, cmd, args)
       return true
     end
   
-    -- Tester la notification
     kcRP.Functions.Notify(pid, message, type, 5000)
   
     return true
@@ -1441,6 +1538,21 @@ function OnPlayerCommandText(pid, cmd, args)
   return party(pid, cmd, args)
 end
 
+-- =====================================================================
+-- Nettoyage à la déconnexion
+-- =====================================================================
+
+function OnPlayerDisconnect(pid)
+  -- Nettoyer la table bankFrames
+  if kcRP.bankFrames then
+    kcRP.bankFrames[pid] = nil
+  end
+  
+  -- Nettoyer la table forgeFrames
+  if kcRP.forgeFrames then
+    kcRP.forgeFrames[pid] = nil
+  end
+end
 -- ---------------------------------------------------------------------
 -- Pull-down : faire tomber un cavalier
 -- Le mouvement natif de prise : un joueur à pied, arme tirée (ou mains nues),
@@ -3164,18 +3276,45 @@ end
 -- Événements envoyés par les moitiés client (boîte de mot de passe, créateur,
 -- fabrication de charrettes). C'est LE gestionnaire d'événements du mode : un
 -- autre module qui définirait OnClientEvent l'écraserait.
-function OnClientEvent(pid, name, payload)
-  local p = players[pid]
-
-  if not p then
-    return
+function OnClientEvent(pid, event, data)
+  -- Événements de la banque
+  if event == "bank_close" then
+    Log("Bank close event received from player", pid)
+    
+    if kcRP.bankFrames and kcRP.bankFrames[pid] then
+      SetPlayerWebFocus(pid, "bank", false)
+      HidePlayerWebFrame(pid, "bank")
+      kcRP.bankFrames[pid] = nil
+      Log("Bank frame closed for player", pid)
+    end
+    
+    return true
   end
-
-  if name == "forge_register_close" then
-    HidePlayerWebFrame(pid, "forge-register")
-    SetPlayerCursor(pid, false)
-
-    return
+  
+  if event == "bank_deposit" then
+    Log("Bank deposit event received from player", pid, data)
+    -- TODO: Traiter le dépôt
+    return true
+  end
+  
+  if event == "bank_withdraw" then
+    Log("Bank withdraw event received from player", pid, data)
+    -- TODO: Traiter le retrait
+    return true
+  end
+  
+  -- Événements de la forge
+  if event == "forge_close" then
+    Log("Forge close event received from player", pid)
+    
+    if kcRP.forgeFrames and kcRP.forgeFrames[pid] then
+      SetPlayerWebFocus(pid, "forge-register", false)
+      HidePlayerWebFrame(pid, "forge-register")
+      kcRP.forgeFrames[pid] = nil
+      Log("Forge frame closed for player", pid)
+    end
+    
+    return true
   end
 
   if name == "auth_ready" then            -- la moitié client est prête : la boîte peut s'ouvrir
