@@ -1,26 +1,35 @@
 // Demander le focus clavier + curseur
-if (window.KcdMp) {
-  KcdMp.focus({ cursor: true, keyboard: true });
-}
+KcdMp.onServer("bank.state", (value) => {
+  state.cash = Number(value.cash) || 0;
+  state.bank = Number(value.bank) || 0;
+  updateDisplay();
+});
 
 const state = {
   cash: 0,
-  bank: 0,
-  total: 0
+  bank: 0
 };
 
+const $ = (id) => document.getElementById(id);
+
 const elements = {
-  cash: document.getElementById("player-cash"),
-  bank: document.getElementById("player-bank"),
-  total: document.getElementById("player-total"),
-  depositAmount: document.getElementById("deposit-amount"),
-  withdrawAmount: document.getElementById("withdraw-amount"),
-  depositButton: document.getElementById("deposit-button"),
-  withdrawButton: document.getElementById("withdraw-button"),
-  closeButton: document.getElementById("close-button"),
+  cash: [$("cashSummary")],
+  bank: [$("bankSummary")],
+  total: [$("totalBalance")],
+  depositAmount: $("depositAmount"),
+  withdrawAmount: $("withdrawAmount"),
+  depositButton: $("depositButton"),
+  withdrawButton: $("withdrawButton"),
+  closeButton: $("closeButton"),
+  subtitle: document.querySelector(".subtitle"),
   tabs: document.querySelectorAll(".tab"),
   tabContents: document.querySelectorAll(".tab-content")
 };
+
+const DEFAULT_SUBTITLE = elements.subtitle ? elements.subtitle.textContent : "";
+let statusTimer = null;
+
+/* ---------- Affichage ---------- */
 
 function formatMoney(value) {
   return Number(value || 0).toLocaleString("fr-FR", {
@@ -29,135 +38,131 @@ function formatMoney(value) {
   });
 }
 
-function updateDisplay() {
-  elements.cash.textContent = formatMoney(state.cash) + " G";
-  elements.bank.textContent = formatMoney(state.bank) + " G";
-  elements.total.textContent = formatMoney(state.cash + state.bank) + " G";
+function setAll(nodes, text) {
+  nodes.forEach((node) => {
+    if (node) node.textContent = text;
+  });
 }
 
-function requestClose() {
-  const sub = document.querySelector(".subtitle");
-  sub.textContent = "Clic reçu, envoi de bank.close...";
+function updateDisplay() {
+  setAll(elements.cash, formatMoney(state.cash));
+  setAll(elements.bank, formatMoney(state.bank));
+  setAll(elements.total, formatMoney(state.cash + state.bank));
+}
 
+function setStatus(text) {
+  if (!elements.subtitle) return;
+  elements.subtitle.textContent = text;
+  clearTimeout(statusTimer);
+  statusTimer = setTimeout(() => {
+    elements.subtitle.textContent = DEFAULT_SUBTITLE;
+  }, 3000);
+}
+
+/* ---------- Clavier dans les champs ---------- */
+
+function takeKeyboard() {
+  KcdMp.focus({ cursor: true, keyboard: true })
+    .catch((e) => console.error("focus clavier refusé :", e));
+}
+
+function releaseKeyboard() {
+  KcdMp.focus({ cursor: true, keyboard: false })
+    .catch((e) => console.error("focus clavier :", e));
+}
+
+[elements.depositAmount, elements.withdrawAmount].forEach((input) => {
+  input?.addEventListener("click", takeKeyboard);
+  input?.addEventListener("focus", takeKeyboard);
+  input?.addEventListener("blur", releaseKeyboard);
+});
+
+/* ---------- Actions ---------- */
+
+function requestClose() {
   try {
     const result = KcdMp.emitServer("bank.close", {});
-
-    if (result && typeof result.then === "function") {
-      result
-        .then(() => { sub.textContent = "bank.close envoyé au serveur."; })
-        .catch((e) => { sub.textContent = "REFUSÉ : " + e; });
-    } else {
-      sub.textContent = "bank.close envoyé (sans réponse).";
+    if (result && typeof result.catch === "function") {
+      result.catch((e) => console.error("bank.close refusé :", e));
     }
   } catch (e) {
-    sub.textContent = "ERREUR : " + e;
+    console.error("bank.close erreur :", e);
   }
+}
+
+function readAmount(input) {
+  const amount = parseFloat(input.value);
+  if (!amount || amount <= 0) {
+    setStatus("Montant invalide.");
+    return null;
+  }
+  return amount;
 }
 
 function deposit() {
-  const amount = parseFloat(elements.depositAmount.value);
-  
-  if (!amount || amount <= 0) {
-    console.log("Montant invalide pour dépôt");
-    return;
-  }
-  
-  if (amount > state.cash) {
-    console.log("Fonds insuffisants en bourse");
-    return;
-  }
-  
-  console.log("Dépôt demandé:", amount);
-  
-  if (window.KcdMp) {
-    KcdMp.emitServer("bank.deposit", { amount: amount });
-  }
-  
+  const amount = readAmount(elements.depositAmount);
+  if (amount === null) return;
+  KcdMp.emitServer("bank.deposit", { amount });
   elements.depositAmount.value = "";
 }
 
 function withdraw() {
-  const amount = parseFloat(elements.withdrawAmount.value);
-  
-  if (!amount || amount <= 0) {
-    console.log("Montant invalide pour retrait");
-    return;
-  }
-  
-  if (amount > state.bank) {
-    console.log("Fonds insuffisants en banque");
-    return;
-  }
-  
-  console.log("Retrait demandé:", amount);
-  
-  if (window.KcdMp) {
-    KcdMp.emitServer("bank.withdraw", { amount: amount });
-  }
-  
+  const amount = readAmount(elements.withdrawAmount);
+  if (amount === null) return;
+  KcdMp.emitServer("bank.withdraw", { amount });
   elements.withdrawAmount.value = "";
 }
 
 function switchTab(tabName) {
-  elements.tabs.forEach(tab => {
+  elements.tabs.forEach((tab) => {
     tab.classList.toggle("active", tab.dataset.tab === tabName);
   });
-  
-  elements.tabContents.forEach(content => {
+  elements.tabContents.forEach((content) => {
     content.classList.toggle("hidden", content.id !== "tab-" + tabName);
   });
 }
 
-// Initialisation avec KCD:MP
-if (window.KcdMp) {
-  console.log("KCD:MP SDK detected");
-  
-  // Recevoir les mises à jour du serveur
-  window.KcdMp.onServer("bank_state", (data) => {
-    console.log("Bank state update:", data);
-    if (data && typeof data === "object") {
-      state.cash = data.cash || 0;
-      state.bank = data.bank || 0;
-      updateDisplay();
-    }
-  });
+/* ---------- Données du serveur ---------- */
+
+function applyState(data) {
+  if (!data || typeof data !== "object") return;
+  state.cash = Number(data.cash) || 0;
+  state.bank = Number(data.bank) || 0;
+  updateDisplay();
 }
 
-// Event Listeners
+if (window.KcdMp) {
+  console.log("KCD:MP SDK detected");
+  KcdMp.onServer("bank.state", applyState);
+  KcdMp.onServer("bank_state", applyState);
+}
+
+/* ---------- Événements ---------- */
+
 elements.closeButton?.addEventListener("click", (event) => {
   event.preventDefault();
   event.stopPropagation();
-  console.log("=== BOUTON X CLIQUÉ ===");
   requestClose();
 });
 
 elements.depositButton?.addEventListener("click", deposit);
-
 elements.withdrawButton?.addEventListener("click", withdraw);
 
-elements.tabs.forEach(tab => {
-  tab.addEventListener("click", () => {
-    switchTab(tab.dataset.tab);
-  });
+elements.tabs.forEach((tab) => {
+  tab.addEventListener("click", () => switchTab(tab.dataset.tab));
 });
 
-// Gestion des touches
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") {
     requestClose();
+    return;
   }
-  
+
   if (event.key === "Enter") {
-    const activeTab = document.querySelector(".tab.active");
-    if (activeTab?.dataset.tab === "operations") {
-      const focusedInput = document.activeElement;
-      if (focusedInput === elements.depositAmount) {
-        deposit();
-      } else if (focusedInput === elements.withdrawAmount) {
-        withdraw();
-      }
-    }
+    if (document.activeElement === elements.depositAmount) deposit();
+    else if (document.activeElement === elements.withdrawAmount) withdraw();
   }
 });
 
+updateDisplay();
 console.log("Bank UI initialized");
