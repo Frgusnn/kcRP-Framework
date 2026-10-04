@@ -1,0 +1,280 @@
+# KCD:MP dedicated server configuration.
+# The server folder ships this file as server.toml.example; the first start copies it to server.toml, which is yours to
+# edit - an update replaces only the example, so compare the two after one for new keys.
+# Read from the working directory (or --config <path>). Every key is optional and the values here are the
+# defaults; a command-line flag of the same name overrides the file (--max-players 64 beats max_players).
+# Every key explained: https://docs.kcd-mp.com/getting-started/server-config/
+
+# The server as the browser and the joining players see it.
+# https://docs.kcd-mp.com/getting-started/server-config/#server
+[server]
+name = "KCD:MP [FR] kcRP Framework Devs"
+motd = ""
+port = 7777
+max_players = 32
+password = "2077"                # "" = open server
+level = "kutnohorsko"            # klaster, trosecko or kutnohorsko
+build_hash = ""              # require one game build; "" = any
+stale_session_seconds = 5.0  # a rejoin under a name in use replaces a client silent this long; 0 = never
+log_file = "server.log"      # the console's lines, written next to the server (the previous run in server.log.1); "" = console only
+http_status = true           # a JSON status at http://<host>:<port>/ (the port's number over TCP) for panels and server lists
+stall_exit = 30              # seconds: a server that cannot send or receive this long ends itself (exit code 3) for the host to start it again; 0 = never
+
+# The game mode: one Lua script or one C# plugin (see gamemodes/README.md).
+# https://docs.kcd-mp.com/getting-started/server-config/#gamemode
+[gamemode]
+script = "gamemodes/kcRP.lua"   # "" = the built-in freeroam
+watch = false                       # true = reload the script when its file changes (development)
+
+# The game mode's own database, for whatever it wants to keep - accounts, factions, scores. Optional: without a
+# driver GetDatabase() answers nil and the mode runs without one. The server's own state (doors, chests, bans) is
+# kept apart in data/server.db and needs nothing here.
+# https://docs.kcd-mp.com/getting-started/server-config/#gamemodedatabase
+[gamemode.database]
+driver = "mysql"                         # "mysql" (MariaDB too) or "postgres"; "" = no database
+host = "127.0.0.1"
+port = 0                            # 0 = the driver's default (3306 / 5432)
+user = "kcrp"
+password = "kcRP_Dev_2026!"
+database = "kcrp"
+# url = "mysql://user:pass@host:3306/kcdmp"   # one line instead of the parts above
+ssl = "preferred"                   # "required" | "preferred" | "none"
+pool = 8                            # connections at most
+timeout_seconds = 10                # per query
+max_rows = 10000                    # a query returning more is refused with an error
+slow_query_ms = 500                 # a query taking longer gets a log line
+
+# The game mode's client half: Lua files sent to every joining player and run in their game, sandboxed to the game.
+# https://docs.kcd-mp.com/getting-started/server-config/#client
+[client]
+scripts = ""                        # a folder of .lua files; "" = the client/ folder next to the game mode's script or plugin
+console = true                 # true = players may open the F9 console window on this server
+
+# Simulation and snapshot rates.
+# https://docs.kcd-mp.com/getting-started/server-config/#rates
+[rates]
+tick_hz = 30
+snapshot_hz = 30             # at most tick_hz
+workers = 0                  # 0 = cores - 2
+adapt = true                 # a player whose connection falls behind gets fewer snapshots (15 or 10 a second) until it catches up
+nearest_full_rate = 32       # in a crowd, the nearest this many moving players, horses, characters, dogs and carts go in every snapshot, the other moving ones in every second one; 0 = all in every one
+
+# Area of interest: how far a player sees the others.
+# https://docs.kcd-mp.com/getting-started/server-config/#aoi
+[aoi]
+radius = 200.0               # metres; 0 = everyone sees everyone
+cell = 64.0
+
+# The world clock and weather every client follows.
+# https://docs.kcd-mp.com/getting-started/server-config/#world
+[world]
+time = "07:30"
+time_ratio = 15.0            # game seconds per real second; 0 freezes the clock
+rain = -1.0                  # 0..1; below 0 = the weather's own
+weather = ""                 # a preset or a profile name; "" = the server rotates the presets (the same sky for everyone)
+weather_blend = 10.0         # seconds
+max_entities = 256           # horses, pickups, props, actors and dogs at once
+
+# Chests and the loose items of the level: what they hold, when they refill, whether that survives a restart.
+# The server keeps doors, gates, chests, taken items and the bans in data/server.db, made on the first start -
+# nothing to configure; it remembers no player (accounts are a game mode's, see [gamemode.database]).
+# https://docs.kcd-mp.com/getting-started/server-config/#containers
+[containers]
+loot = "game"                # "game" = a chest's first contents come from the game's own loot tables (needs the tables file); "empty" = nothing
+restock = "game"             # "game" = each chest's own period (7 world days unless the level says otherwise); "never"; or world days, e.g. "2"
+world_items = true           # the items lying on tables and shelves are one per world: taken by one player, gone for all, back after the period
+persist = true               # doors, gates, chests and taken items survive a restart; false = the level's defaults at every start
+
+# Movement checks on what the clients report.
+# https://docs.kcd-mp.com/getting-started/server-config/#validation
+[validation]
+max_speed = 14.0             # m/s on horseback, the fastest anyone may move (a gallop is ~11); 0 = no speed check
+max_speed_on_foot = 8.0      # m/s (a sprint is ~5)
+max_speed_crouched = 5.0     # m/s
+heightmap = "data/heightmaps/{level}.hmap"   # the terrain check, on while the file is there (tools/KcdMp.ExportHeightmap.exe writes it, see data/README.md); "" = never
+navmesh = "data/navmesh/{level}.knav"       # actors walk around walls, on while the file is there (tools/KcdMp.ExportNavmesh.exe writes it); "" = never
+collision = "data/collision/{level}.kcol"   # RayCast, the floor as the ground, on while the file is there (tools/KcdMp.ExportCollision.exe writes it); "" = never
+line_of_sight = false        # with collision: a hit or shot claimed, a rider pulled down, a body grabbed or a pocket picked through a wall is refused (off = only logged)
+no_clip = false              # with collision: a step through a wall is pulled back (off = only logged)
+max_below_terrain = 6.0      # metres
+max_above_terrain = 60.0     # with collision the floor under the player counts, so 10 does
+strict = false               # the finer checks (speed per gait, jumps, horse stamina, blocks the server did not see, sprinting or mounting while overloaded - that one with [audit] mode = "enforce" too): true = they pull back / apply; false = only logged. The XP, level, perk and nourishment / energy checks do not use it
+speed_scale = 1.0            # the speed limits of the finer checks (each gait, an overloaded walk, a horse's sprint) times this, 0.5..4 - not max_speed, max_speed_on_foot or max_speed_crouched, which a server whose mods make players faster raises itself
+
+# The public server list this server announces itself to.
+# https://docs.kcd-mp.com/getting-started/server-config/#master
+[master]
+url = "https://kcd-mp.com/server-list"   # "" = a private server, announced nowhere
+interval_seconds = 60
+public_address = ""          # "" = the address the list sees the heartbeat come from; "host:port" when players reach the
+                             # server on another port than [server] port (a tunnel's, e.g. playit.gg)
+
+# The chat commands the server answers in every game mode. Admins are the game mode's (SetPlayerAdmin): the
+# server keeps no accounts and no admin list.
+# https://docs.kcd-mp.com/getting-started/server-config/#commands
+[commands]
+builtin = true               # false = the game mode answers everything
+public = ["help", "pos", "players", "items", "uptime"]   # the rest answer admins only
+disabled = []                # e.g. ["horse", "rain"]
+
+# The audit. Items: every item a player or their horse gains must come from something the server knows of
+# (its own gift, a pickup, a chest, the level's items, a shop); one it cannot explain is taken away. The character: levels, XP,
+# perk points and perks, the nourishment and the energy, and what a player carries are judged against what the server can
+# explain, and a rise nothing explains is put back. `mode` covers all of it; `action` only the cheats proven beyond doubt.
+# https://docs.kcd-mp.com/getting-started/server-config/#audit
+[audit]
+enabled = true
+mode = "observe"             # observe = everything judged and logged, nothing removed or put back | enforce = unexplained items are removed and unexplained progress is put back (read the log a while first; a story server vouches for its quest XP in OnPlayerProgressViolation)
+action = "kick"              # what a player caught cheating beyond doubt gets: kick | ban | log (an unexplained item alone is removed, never kicked)
+ban_seconds = 0              # 0 = for good
+guarded_categories = "Armor,MeleeWeapon,MissileWeapon,Ammo,Helmet,Hood,Money"   # never made by the game itself (a craft); Money = the purse; HorseGear = saddle, bridle, bags
+
+# The game's own mods (Steam Workshop items and the Mods folder) a player's game may run.
+# https://docs.kcd-mp.com/getting-started/server-config/#mods
+[mods]
+policy = "any"               # any | allow_list (only the ones below) | none
+allowed = []                 # with allow_list: mod ids (a mod.manifest's modid), e.g. ["smithsreach"]
+refused = []                 # never, whatever the policy
+
+# Combat: damage, stamina, injuries, fights, drink. The server owns every player's health.
+# https://docs.kcd-mp.com/getting-started/server-config/#combat
+[combat]
+pvp = true
+respawn_seconds = 10         # 0 = the game mode calls SpawnPlayer
+loot_bodies = "all"          # what a dead player's body gives up to a search: all | carried (not what they wear) | none
+corpse_seconds = 0           # the body stays where it fell this long after the respawn (empty: the player keeps everything, unless the game mode fills it); 0 = gone with the respawn
+max_reach = 4.0              # metres
+fight_timeout = 30.0         # seconds without a blow; 0 = never by time
+claim_window_ms = 1500       # 0 = no window
+damage_scale = 1.0
+max_claim_damage = 80.0      # without the tables
+tables = "data/combat/items.json"   # the game's weapon, armour and item tables (tools/KcdMp.ExportTables.exe writes it, see data/README.md)
+claimed_buffs = []           # buff classes only the server may give, e.g. ["Potion", "Poison"]
+potion_speed = 2.0
+fall_damage = 1.0            # the game's damage for a fall times this; 0 = falls hurt nobody
+alcohol_per_content = 0.01
+alcohol_decay = 0.00125      # per second
+drunk_threshold = 0.32
+hangover_seconds = 120.0
+attack_scale = 0.32
+ranged_scale = 0.0077
+armour_pivot = 50.0
+fist_damage = 6.0
+body_parts = ""              # normally empty
+max_stamina = 100.0
+stamina_regen = 15.0         # per second standing; 0.75 of it walking or running
+attack_stamina_cost = 10.0
+hit_stamina_damage = 12.0
+shot_stamina = 15.0
+shot_interval_ms = 400
+shot_window_seconds = 6.0
+block_stamina_cost = 10.0
+perfect_block = true         # perfect blocks and master strikes count (a perfect-blocked swing does no harm)
+parry_window_ms = 500        # at most this long a blow waits for its victim's own perfect block or block; 0 = no wait
+counter_parry_window_ms = 700 # the same for a counter after a perfect block (its victim parries it later); 0 = as parry_window_ms
+perfect_block_stamina = 15.0 # taken from the attacker whose swing was perfect-blocked
+victim_blocks = true         # a blow the victim's own game blocked does no harm, whatever the attacker saw
+master_strike_scale = 1.5    # a master strike against a plain swing of the same weapon
+clinch = true                # two players may clinch (lock blades and strike inside it); false = never
+clinch_scale = 0.6           # a clinch blow against a plain swing of the same weapon
+clinch_parry_window_ms = 1300 # at most this long a clinch blow waits for its victim's counter inside the clinch; 0 = no wait
+sprint_stamina_cost = 5.0    # per second (the game's own)
+jump_stamina_cost = 9.0      # the game's own
+injury_threshold = 15.0
+bleed_per_damage = 0.015
+max_bleed = 1.0              # health per second
+bleed_seconds = 40.0
+
+# What the players' screens show of each other, drawn in the game's own UI.
+# https://docs.kcd-mp.com/getting-started/server-config/#ui
+[ui]
+nameplates = true            # a name over every player's head: true (everyone), "party" (the party members' alone) or false
+health_bars = true           # a health bar under the name: true, "party" or false
+through_walls = false        # true shows a plate through walls and doors; the default hides it while its player is out of sight
+range = 50                   # metres a plate shows up to (it fades over the last third)
+injuries = false             # true adds the six injury marks under the bar
+party_color = ""            # a color like "80E080" for a party member's name; "" keeps the game's own
+team_color = ""             # the same for a teammate's name (SetPlayerTeam); a game mode's SetPlayerColor beats both
+party_compass = true         # the party members as blips on the compass
+chat_bubbles = true          # a player's chat line over their head for a few seconds
+map_fog = false              # true keeps the fog over the parts of the world map a player has not walked; false shows the whole map
+
+# Voice chat: players talk to whoever stands near them, through the game's own 3D sound.
+# https://docs.kcd-mp.com/getting-started/server-config/#voice
+[voice]
+enabled = true               # false = no voice chat on this server
+range = 25                   # metres a voice carries (a game mode can change it, and set one player's own)
+max_bytes = 400              # the largest voice frame relayed (400 covers the highest quality a client sends)
+
+# Parties: the groups the server keeps for the game mode's own /invite, /accept, /p commands.
+# https://docs.kcd-mp.com/getting-started/server-config/#party
+[party]
+max_size = 5                        # members per party
+invite_timeout = 30                 # seconds until an unanswered invitation runs out
+frames = true                       # the party frames on screen (a mode can switch them per player)
+leader_leaves = "next"              # "next" = the next member leads; "disband" = the party ends
+friendly_fire = false               # true = members can hurt each other
+
+# Emotes: the wheel players hold G for (T points) - a wave, a bow, a dance, seen by everyone around. A chat command for
+# them is the game mode's (the shipped modes' /anim).
+# https://docs.kcd-mp.com/getting-started/server-config/#emotes
+[emotes]
+enabled = true               # false = no wheel and no point on T (a mode's /anim still plays them)
+wheel = ["wave", "bow", "cheer", "clap", "dance", "come"]    # at most 8, clockwise from the top; [] = no wheel (also: salute, nod, point - T holds it)
+# Your own: name = "Label | the body's clip | the player's own fragment | its tags | loop or once" (see the link above).
+# [emotes.custom]
+# kneel = "Kneel | pray_kneel_loop | PrayKneeling | | loop"
+
+# Horse-drawn carts: routes the server drives along its roads (players ride along) and carts players drive themselves.
+# Record a route in the game with /cartroute (admins); /cart puts a free cart in front of you.
+# https://docs.kcd-mp.com/getting-started/server-config/#carts
+[carts]
+enabled = true
+routes = "data/carts/{level}.toml"   # the routes file, one per level; "" = none (a mode's AddCartRoute still works)
+speed = 7.0                  # m/s a route's carts travel at unless the route says otherwise (7 = a horse's canter)
+drive_speed = 7.0            # m/s at most for a cart a player drives
+driver_clothing = "24e4aa5b-cd2c-4dba-9426-b63e674b7037"   # the route drivers' clothing preset (a villager's)
+
+# One-shot effects, decals and sounds a game mode puts in the world.
+# https://docs.kcd-mp.com/getting-started/server-config/#effects
+[effects]
+range = 150.0                # metres; 0 = everyone in that world
+
+# NPC actors: how they fight back.
+# https://docs.kcd-mp.com/getting-started/server-config/#actors
+[actors]
+fight_back = true
+swing_interval = 1.8         # seconds
+max_attackers = 0            # 0 = every actor in reach swings; e.g. 3 = at most three swing at one player within a swing_interval, the rest wait their turn
+reach = 2.2                  # metres
+chase_speed = 2.0            # m/s
+chase_range = 30.0           # metres
+attack_scale = 1.0
+max_damage = 60.0
+block_chance = 0.5           # 0 = never, 1 = every swing
+block_hold = 0.7             # seconds
+drop_weapons = true
+open_doors = true            # a walking actor opens the closed doors on its way; a locked one stops it
+
+# Where and as whom players spawn.
+# https://docs.kcd-mp.com/getting-started/server-config/#spawn
+[spawn]
+x = 1280.0                   # metres, level world space (klaster: the monastery courtyard)
+y = 1088.0
+z = -1.0                     # below 0 = on the terrain
+yaw = 0.0                    # degrees, 0 = facing +Y
+# A level's own spawn, [x, y, z, yaw], beats the four above on that level (--spawn beats both).
+# kutnohorsko = [752.0, 3346.0, 142.3, 0.0]   # the default: the inner yard of the Suchdol fortress, facing its gate
+# trosecko = [1000.0, 1000.0, -1.0, 0.0]
+horse_soul = "1b356948-3d22-427c-86f9-f33ab2b441c6"          # Horse2
+clothing_preset = ""         # "" = players start naked; e.g. "52169773-0c2b-407a-a123-8b403e224718" (UC_HenryTrosky)
+weapon_preset = ""           # "" = unarmed; e.g. "24616df1-49a9-48b9-8d73-6ddd85fca7a4" (sword_shield_4_01)
+items = ["torch_weapon"]     # given at a player's first spawn
+stat_level = 0               # strength, agility, vitality and speech raised to this at the spawn (the game announces each rise); 0 = the level's own, no notices
+appearances = [              # the faces players get, one each; [] = the body's default
+  "0ca595d0-3216-4fe6-859c-46653e2052fa", "16b54854-7918-47a6-916a-1068d037c218", "2297773a-b2e4-4a6f-a18b-4f62e8ad3c3b",
+  "257f3055-1253-427d-aa30-e070d45da3e6", "2c525732-9231-4ec8-b9d9-d456847912e2", "31698b3e-287b-4d5c-8b6e-835d871af695",
+  "509f2aac-7bfd-4a9b-a454-840be2c7f4c9", "5911fa49-85f7-4c2d-a85d-b0c0ab3b84a5", "5977088c-fca3-4a3a-9eb8-be8006d17381",
+  "61cbb0a5-922d-4eb0-b0d9-6cfdf00807ee", "bc421411-f23c-42c2-be31-cd603bffb263", "bed7d86e-1977-47fb-b696-4c2d2cc10014",
+  "d04998f7-5bef-46b5-80e8-4ef38a45a306",
+]
