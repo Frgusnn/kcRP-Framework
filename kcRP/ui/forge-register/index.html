@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Registre de la Forge</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="register">
+    <header class="register__header">
+      <section>
+        <p class="eyebrow">Forge de Kuttenberg</p>
+        <h1>Registre des croquis</h1>
+        <p class="subtitle">Archives et plans certifiés de la corporation.</p>
+      </section>
+
+      <section class="seal" aria-label="Sceau de la Forge">
+        <span>⚒</span>
+      </section>
+
+      <section class="purse">
+        <span class="purse__label">Bourse</span>
+        <strong id="player-money">—</strong>
+        <span class="currency">Groschen</span>
+      </section>
+      <button
+        id="close-button"
+        class="close-button"
+        type="button"
+        aria-label="Fermer le registre"
+        title="Fermer le registre"
+      >
+        ×
+      </button>
+    </header>
+
+    <section class="register__body">
+      <aside class="sidebar">
+        <p class="section-label">Catalogue</p>
+
+        <button class="filter active" data-filter="all">
+          <span>◈</span> Tous les plans
+        </button>
+
+        <button class="filter" data-filter="axe">
+          <span>◆</span> Haches
+        </button>
+
+        <button class="filter" data-filter="sword">
+          <span>◆</span> Lames
+        </button>
+
+        <button class="filter" data-filter="longsword">
+          <span>◆</span> Épées longues
+        </button>
+
+        <button class="filter" data-filter="horseshoe">
+          <span>◆</span> Ferrures
+        </button>
+
+        <div class="sidebar__rule"></div>
+
+        <p class="section-label">Votre rang</p>
+        <p id="player-rank" class="rank">Membre de la Forge</p>
+
+        <p class="section-label section-label--lower">Plans acquis</p>
+        <p id="known-count" class="known-count">0 croquis connus</p>
+      </aside>
+
+      <section class="catalogue">
+        <div class="catalogue__toolbar">
+          <input
+            id="search"
+            type="search"
+            placeholder="Rechercher un croquis..."
+            autocomplete="off"
+          >
+          <span id="catalogue-count" class="catalogue-count">Catalogue en attente</span>
+        </div>
+
+        <div id="sketch-list" class="sketch-list">
+          <div class="empty-state">
+            <span>⚒</span>
+            <p>Le registre attend les croquis de la forge.</p>
+          </div>
+        </div>
+      </section>
+
+      <aside class="detail">
+        <p class="section-label">Plan sélectionné</p>
+
+        <div id="detail-empty" class="detail-empty">
+          <span>⚒</span>
+          <p>Sélectionnez un croquis dans le registre.</p>
+        </div>
+
+        <div id="detail-content" class="detail-content hidden">
+          <span id="detail-tier" class="tier-badge">Apprenti</span>
+          <h2 id="detail-name">—</h2>
+          <p id="detail-description">
+            Croquis de forge certifié par la corporation de Kuttenberg.
+          </p>
+
+          <dl class="details">
+            <div>
+              <dt>Rang requis</dt>
+              <dd id="detail-rank">—</dd>
+            </div>
+            <div>
+              <dt>Prix</dt>
+              <dd><span id="detail-price">—</span> Groschen</dd>
+            </div>
+            <div>
+              <dt>Statut</dt>
+              <dd id="detail-status">Disponible</dd>
+            </div>
+          </dl>
+
+          <button id="buy-button" class="buy-button" disabled>
+            Acheter le croquis
+          </button>
+
+          <p class="lore">
+            « Un bon plan guide la main. Un bon forgeron le dépasse. »
+          </p>
+        </div>
+      </aside>
+    </section>
+
+    <footer class="register__footer">
+      <span>Échap — Fermer le registre</span>
+      <span>La Forge de Kuttenberg · Corporation des artisans</span>
+    </footer>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

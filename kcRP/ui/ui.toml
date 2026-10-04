@@ -1,0 +1,6 @@
+api = 1
+
+[frames.forge-register]
+page = "forge-register/index.html"
+z = 200
+focus = "input"
