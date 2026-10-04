@@ -384,6 +384,14 @@ end
 -- initialisation des modules jobs et banque, sauvegarde périodique.
 function OnGameModeInit()
   Log(fmt("kcRP on %s: spawn %.1f %.1f %.1f, %d slots", GetLevel(), spawnX, spawnY, spawnZ, GetMaxPlayers()))
+  --Charger les scripts client
+  AddClientScript("kcRP/client/notifications.lua")
+  AddClientScript("kcRP/client/account.lua")
+  AddClientScript("kcRP/client/creator.lua")
+  AddClientScript("kcRP/client/cartmaker.lua")
+  AddClientScript("kcRP/client/forge-register.lua")
+  AddClientScript("kcRP/client/z20_hud.lua")
+  AddClientScript("kcRP/client/z40_forge_unlock.lua")
 
   SetStoryQuests(false) -- les quêtes du jeu restent endormies (elles peuvent prendre les affaires d'un joueur)
   SetXPRate(PROGRESS.xp_rate)
@@ -1006,6 +1014,7 @@ end
 -- Les fichiers du dossier client/ ne se chargent PAS ici : le serveur
 -- les envoie lui-même aux joueurs.
 -- ---------------------------------------------------------------------
+dofile("gamemodes/kcRP/server/notifications.lua")
 dofile("gamemodes/kcRP/shared/jobs.lua")
 dofile("gamemodes/kcRP/server/jobs.lua")
 dofile("gamemodes/kcRP/server/bank.lua")
@@ -1198,6 +1207,7 @@ local DOWN_BLOCKED = {
   look = true, dice = true, carry = true, putdown = true
 }
 
+
 -- ---------------------------------------------------------------------
 -- Les commandes
 -- Retourne true si la commande est traitée ; false laisse le serveur
@@ -1389,6 +1399,37 @@ function OnPlayerCommandText(pid, cmd, args)
   if cmd == "help" then
     help(pid)
     return true                     -- la liste du mode seulement : les commandes natives sont des outils d'admin
+  end
+    
+  -- =====================================================================
+  -- Commande de test pour les notifications (admin)
+  -- =====================================================================
+
+  if cmd == "notify" then
+    if not IsPlayerAdmin(pid) then
+      SendClientMessage(pid, COLOR_RED, "Cette commande est réservée aux administrateurs.")
+      return true
+    end
+  
+    local message, type = args:match("^([^;]+);?([^;]*)$")
+  
+    if not message then
+      SendClientMessage(pid, COLOR_GOLD, "Usage : /notify <message> [type]")
+      SendClientMessage(pid, COLOR_WHITE, "Types : info, success, warning, error")
+      return true
+    end
+  
+    type = type and type:lower() or "info"
+  
+    if not ({ info = true, success = true, warning = true, error = true })[type] then
+      SendClientMessage(pid, COLOR_RED, "Type invalide. Utilisez : info, success, warning, error")
+      return true
+    end
+  
+    -- Tester la notification
+    kcRP.Functions.Notify(pid, message, type, 5000)
+  
+    return true
   end
 
   return party(pid, cmd, args)
